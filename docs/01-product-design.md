@@ -2,6 +2,8 @@
 
 Status: accepted design for implementation. This document and the linked specifications replace earlier planning proposals. Features described here are not all implemented; see [handoff](06-implementation-handoff.md).
 
+Catalogue revision: the initial product uses `workshop-1` with the basketball and three approved platform variants, plus an empty sandbox starter. Material comparison remains a possible simulation test. Follow the [catalogue contribution procedure](03-puzzle-contract.md#repeatable-procedure-for-adding-parts) when expanding the parts list.
+
 ## Guiding constraint
 
 **Only glue code and product rules.**
@@ -56,7 +58,9 @@ One catalogue release contains its complete material and part records and refere
 
 Materials use known relational fields. Parts use known relational geometry, mass and material references. Puzzle JSON references those parts. Values do not come from SVG outlines, image pixels, Blender meshes, user scripts or arbitrary submitted Rapier options.
 
-The visual reference is separate from physics. The first slice uses PixiJS primitives. Future art must preserve contact alignment, origin and pivot. Art-only changes must not modify physics; physical changes require another catalogue release (and a simulation version change if numerical rules/code change).
+Laravel Data and native Laravel validation own catalogue product rules: supported identifiers, shape requirements, mass and coefficient limits. Migrations define storage, relationships and uniqueness, without embedding catalogue entries or duplicating those rules as database CHECK constraints. Adding an approved variant using existing fields is a seed/art change; adding a new visual or recipe also requires its reviewed implementation and PHP allowlist change, not a migration merely to approve its identifier.
+
+The visual reference is separate from physics. The welcome screen and basketball/brick test share original SVG assets, drawn as images in React and textures in PixiJS. Art preserves contact alignment, origin and pivot. Art-only changes must not modify physics; physical changes require another catalogue release (and a simulation version change if numerical rules/code change).
 
 ## Goals and scores — later implementation, settled semantics
 
@@ -68,9 +72,9 @@ Use a table for standings; charts may show distributions and personal improvemen
 
 ## First playable slice
 
-Three identical basketballs dropped from equal heights onto identically sized brick, wood and rubber-mat platforms. Only approved material presets differ. Players may rearrange positions/rotations, Play, Reset, save locally and reopen. Show first rebound height as a diagnostic, not a ranked score. No coefficient sliders in the public editor.
+An empty sandbox with a palette containing the basketball and brick, wood and rubber-mat platforms. Players place approved parts, change positions/rotations, Play, Reset, save locally and reopen. No prearranged demonstration or required goal is seeded. No coefficient sliders in the public editor.
 
-Implement it after the Laravel catalogue and generated contracts work. See [implementation sequence](05-implementation-plan.md). The initial fixture coefficients are gameplay tuning values, not real-world material measurements.
+Implement it after the Laravel catalogue and generated contracts work. See [implementation sequence](05-implementation-plan.md). The initial part coefficients are retained gameplay tuning values, not real-world material measurements. The three-material drop described in 04-material-prototype.md can be used as a test fixture without becoming the product starter.
 
 ## Deferred without blocking this design
 

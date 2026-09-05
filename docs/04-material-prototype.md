@@ -2,6 +2,10 @@
 
 Status: implementation target after the catalogue/DTO slice. No artwork or new rendering framework required.
 
+The requested basketball/brick test now exists at `/prototype`, with shared SVG assets and the accepted material recipe adapter. The three-lane comparison below remains an optional test scenario, not the empty sandbox starter. See development.md for current evidence; it does not yet include all three material rebounds or cross-browser digests.
+
+Revision: this document retains the reviewed numerical recipe and an optional material-comparison test scenario. Product setup now seeds `workshop-1` with the same four parts and starts with an empty sandbox. It does not seed the three-lane layout or prototype-1. The scenario below must not be used to restrict catalogue membership or repopulate the product starter. The existing `material-demo-1` recipe identifier is retained because this change does not alter numerical rules; its adapter still belongs to phase B.
+
 ## Recipe material-demo-1
 
 | Setting | Value |

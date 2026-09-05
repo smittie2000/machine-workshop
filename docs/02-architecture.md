@@ -6,7 +6,7 @@ Status: accepted. Governing constraint: **Only glue code and product rules.**
 
 | Responsibility | Existing capability to use | Glue/product code permitted |
 | --- | --- | --- |
-| Tables, relations, transactions | Laravel migrations, Eloquent, PostgreSQL constraints | Domain columns and constraints; release/save transactions |
+| Tables, relations, transactions | Laravel migrations, Eloquent, PostgreSQL constraints | Column types/nullability, primary/unique keys and foreign keys; release/save transactions |
 | Authorization | Laravel policies and middleware | Ownership and publication permissions |
 | Authentication, later | Laravel Fortify + Sanctum session authentication | UI, same-origin forwarding and standard CSRF handling |
 | PHP data shape / JSONB casting | Spatie Laravel Data | Named DTOs, validation attributes and cross-field product rules |
@@ -46,6 +46,8 @@ The Save arrow is the later authenticated cloud path. The first slice saves a lo
 
 ## Repository boundaries
 
+Frontend convention: route modules render named screens in `apps/web/src/features/<feature>`. Reusable site components live in `src/components`; original basketball/brick SVGs live in `public/assets/parts` and are shared by React previews and Pixi sprites. `PartArtwork` explicitly maps visual keys. Artwork bounds align to the collider silhouette, with centred anchors and dimensions supplied by the catalogue. Decorative shadows belong to presentation outside the assets. The welcome screen and `/prototype` use this convention; the prototype is a dedicated test and does not populate the empty sandbox starter.
+
 - apps/api: authoritative Eloquent models, DTOs, enums, policies, controllers, seeders and application actions.
 - packages/contracts: generated TypeScript DTO/enumeration definitions. No competing manually maintained puzzle schema.
 - apps/web/src/generated: Wayfinder output only; contains transport helpers, not game data.
@@ -69,6 +71,8 @@ Wayfinder returns URL/method helpers; Spatie supplies payload/response types. Fe
 ## Validation ownership
 
 Laravel Data supplies structural types and ordinary validation through Laravel's validator. Add domain rules for catalogue membership, supported shape fields, limits, immutable scenery and inventory. Use explicit validation for requests, local-draft restoration and seed imports: constructing a DTO or casting an Eloquent attribute is not itself proof that validation ran.
+
+Catalogue DTO rules own supported visual/recipe/body/shape identifiers, shape-dependent dimensions, dynamic mass and coefficient bounds. Ordinary catalogue model saves reuse these rules before persistence, validating raw values before casts can round or coerce them. The importer validates the complete definition and release sealing validates completeness again. PostgreSQL retains relational integrity and uniqueness; do not duplicate catalogue product rules in CHECK constraints. Bulk SQL/Eloquent query-builder writes bypass this validation and the release guards and are not supported catalogue-maintenance paths.
 
 Use enum/attribute/rule capabilities before custom validators. Reject unsupported/unknown payload keys with explicit allowed-key rules. Do not build a second generic validation schema in TypeScript. UI constraints improve feedback; Laravel remains authoritative.
 

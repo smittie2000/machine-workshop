@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="100" viewBox="0 0 1000 100">
+  <defs><pattern id="masonry" width="200" height="100" patternUnits="userSpaceOnUse">
+    <rect width="200" height="100" fill="#e0bc98"/>
+    <path d="M2 3H98V47H2ZM102 3H198V47H102ZM-48 53H48V97H-48ZM52 53H148V97H52ZM152 53H248V97H152Z" fill="#b56d4d"/>
+    <path d="M3 5H97M103 5H197M53 55H147M153 55H198M3 55H47" stroke="#d78c62" stroke-width="4"/>
+    <path d="M4 45H97M104 45H197M54 95H147M154 95H198M4 95H47" stroke="#874c39" stroke-width="3"/>
+    <path d="M15 18H37M70 29H82M124 19H143M65 68H86M116 82H135M166 68H184" stroke="#9b563c" stroke-width="2" opacity=".7"/>
+  </pattern></defs>
+  <rect width="1000" height="100" fill="url(#masonry)"/>
+  <path d="M0 2H1000" stroke="#e8b28a" stroke-width="4"/>
+  <path d="M0 98H1000" stroke="#754a37" stroke-width="4"/>
+</svg>

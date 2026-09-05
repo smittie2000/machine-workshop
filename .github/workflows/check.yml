@@ -1,0 +1,18 @@
+name: Check
+on: [push, pull_request]
+jobs:
+  phase-a:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./dev.ps1 setup
+      - run: ./dev.ps1 check
+      - name: Generated output matches the checkout
+        run: |
+          git diff --exit-code -- packages/contracts apps/web/src/generated packages/simulation/fixtures
+          if ($LASTEXITCODE -ne 0) { throw 'Generated contracts differ from the checkout.' }
+          $untracked = git ls-files --others --exclude-standard -- packages/contracts apps/web/src/generated packages/simulation/fixtures
+          if ($untracked) { throw "Untracked generated files: $untracked" }

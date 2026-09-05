@@ -1,4 +1,6 @@
 import RAPIER from '@dimforge/rapier2d-compat'
+export { createMaterialSimulation, MATERIAL_RECIPE } from './material-simulation'
+export type { MaterialSimulation, BodyState } from './material-simulation'
 let initialized: Promise<void> | undefined
 export async function runFixture() {
   initialized ??= RAPIER.init()

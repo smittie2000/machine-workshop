@@ -1,0 +1,9 @@
+{
+  "name": "@workshop/contracts",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./App/Data/index.ts",
+    "./enums": "./App/Enums/index.ts"
+  }
+}

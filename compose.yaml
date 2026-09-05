@@ -1,5 +1,19 @@
 name: machine-workshop
 services:
+  test-db:
+    image: postgres:17-bookworm
+    profiles: [test]
+    environment:
+      POSTGRES_DB: workshop_test
+      POSTGRES_USER: workshop_test
+      POSTGRES_PASSWORD: workshop-test-only
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workshop_test -d workshop_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
   db:
     image: postgres:17-bookworm
     environment:

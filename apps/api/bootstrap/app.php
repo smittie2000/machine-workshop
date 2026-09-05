@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->trimStrings(except: [fn (Request $request) => $request->is('api/v1/documents/validate')]);
+        $middleware->convertEmptyStringsToNull(except: [fn (Request $request) => $request->is('api/v1/documents/validate')]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@workshop/contracts": "workspace:*",
     "@dimforge/rapier2d-compat": "0.20.0"
   },
   "devDependencies": {

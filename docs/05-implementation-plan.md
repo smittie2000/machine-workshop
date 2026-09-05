@@ -1,17 +1,21 @@
 # Implementation sequence and acceptance gates
 
-Status: planning complete. This change adds design only. Start with A; do not jump to the canvas or build future milestones at once.
+Status: phase A implemented and checked; see [development acceptance evidence](development.md#phase-a-catalogue-and-contracts). B and later phases remain implementation work. Do not jump to the canvas or build future milestones at once.
+
+User-requested welcome/test slice is implemented: named React screens, shared basketball/brick SVGs, a dedicated two-part prototype document, and the material recipe adapter with Node rebound/repeatability coverage. This implements part of B and a bounded test surface, not the full C editor. Cross-browser digests, three-material ordering, editing and local save remain outstanding. See development.md for evidence and conventions before continuing.
+
+Catalogue revision: use `WorkshopOneSeeder` and the empty sandbox starter as the current foundation. Keep any material-comparison fixture in tests when phase B implements it. Follow the [explicit contribution conventions](03-puzzle-contract.md#repeatable-procedure-for-adding-parts) when adding parts.
 
 ## A — Laravel catalogue and generated contracts
 
 1. Inspect existing Docker/runtime versions. Install compatible Spatie Laravel Data, Spatie Laravel TypeScript Transformer and Laravel Wayfinder inside the API container. Use package-provided commands/configuration. Pin lockfiles; do not introduce Inertia.
-2. Generate the three catalogue migrations, Eloquent models, enums and initial DTOs with normal Laravel tooling. Implement the explicit schema from 03-puzzle-contract.md, including same-release FKs and bounds.
-3. Add the small catalogue import/release action and release-specific seeder using Laravel transactions/locks. Add materials/parts for prototype-1 with the reviewed defaults. Put starter placements in the small PHP config fixture specified in the domain contract, referencing that release; never mutate a released definition on subsequent setup.
+2. Generate the three catalogue migrations, Eloquent models, enums and initial DTOs with normal Laravel tooling. Implement the explicit schema from 03-puzzle-contract.md, including same-release FKs and uniqueness. Keep bounds, supported identifiers and shape/mass requirements in Laravel DTO rules reused by imports and ordinary model saves; no catalogue product CHECK constraints.
+3. Add the small catalogue import/release action and release-specific seeder using Laravel transactions/locks. Add the four initial materials/parts for workshop-1 with the reviewed defaults and explicit seed structure. Put the empty sandbox starter in the small PHP config specified in the domain contract, referencing that release; never mutate a released definition on subsequent setup.
 4. Expose the released catalogue, starter and stateless document validation controller endpoints. Use DTO validation/serialization and named routes. Rate-limit validation; no database write or authentication required for this endpoint.
 5. Generate TypeScript contracts and Wayfinder helpers into the agreed monorepo locations from PHP. Add an explicit root Docker-backed generation command and integrate generation before build/check. Keep generated files portable and committed.
 6. Add a small typed fetch adapter and Query options for catalogue/starter/validation. Do not build editor features yet.
 
-Tests: PostgreSQL-backed schema constraints (including cross-release material references), expected seed content, safe repeated seed, refusal of released edits, unreleased catalogue not public, coefficient number serialization, valid/invalid nested document requests, unknown fields, generated types compiling and regeneration producing no diff. Use a separate test database for database-mutating tests; never RefreshDatabase against the development database. Keep existing smoke checks.
+Tests: PostgreSQL-backed relational/unique constraints (including cross-release material references), DTO validation of product rules on imports and ordinary model saves, new variants without schema changes, expected seed content, safe repeated seed, refusal of released edits, unreleased catalogue not public, coefficient number serialization, valid/invalid nested document requests, unknown fields, generated types compiling and regeneration producing no diff. Use a separate test database for database-mutating tests; never RefreshDatabase against the development database. Keep existing smoke checks.
 
 Gate: Laravel returns real catalogue data, generated contracts compile in the frontend, and a document can be validated without handwritten duplicate interfaces. Review this gate before expanding scope.
 
@@ -29,7 +33,7 @@ Use Start/React controls, a per-editor TanStack Store and PixiJS. Wire Query dat
 
 One completed placement/rotation/duplicate/delete action creates one history entry, capped at 100; selection doesn't. This small bounded snapshot behaviour is sufficient. Do not add a generic command framework or another state library. Local save needs explicit feedback; malformed/stale local drafts must be validated before running. API unavailable means keep the draft and show a retry state, never silently substitute catalogue data.
 
-Gate: three visible materials, equal initial drops, measurable rebounds, placement/rotation changes, Reset preserving draft, save/reopen round-trip, browser lifecycle cleanup and cross-browser fixture checks. This is the first playable prototype.
+Gate: empty sandbox, palette with the four approved parts, placement/rotation changes, Reset preserving draft, save/reopen round-trip, browser lifecycle cleanup and cross-browser fixture checks. Material rebound comparisons belong to simulation tests, not required starter placements. This is the first playable slice.
 
 ## D — Accounts and cloud drafts
 
