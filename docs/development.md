@@ -40,28 +40,21 @@ Laravel skeleton source: official laravel/laravel branch 13.x, commit aa0cf127fc
 
 ## Docker first-start troubleshooting
 
-If Docker remains in Starting and requests return engine HTTP 500, use Docker Desktop's normal Restart action and wait for Running before rerunning setup. Do not reset Docker data or unregister its WSL distribution. The initial installation here required one normal restart; no existing Docker data was deleted.
+If Docker remains in Starting and requests return engine HTTP 500, use Docker Desktop's normal Restart action and wait for Running before rerunning setup. Do not reset Docker data or unregister its WSL distribution.
 
 The PowerShell wrapper adds Docker's helper directory to the current process PATH so freshly installed credential helpers work without restarting the terminal. It does not modify the machine/user PATH or install application language runtimes on Windows.
 
-## Verification status
+## Verify your setup
 
-Verified on 2026-09-05:
+After running setup and up:
 
-- Docker Desktop 4.89.0 installed and running with the WSL 2 Linux engine.
-- Both application images built; dependencies installed inside containers with pnpm and Composer lockfiles retained.
-- PHP 8.4.25, Node 24.20.0 in the containers; Laravel 13.30.1 and Rapier 0.20.0.
-- PostgreSQL initial users, cache and jobs migrations completed.
-- Compose reports db, api and web healthy.
-- HTTP GET http://localhost:3000 returns 200 and the application title.
-- HTTP GET http://localhost:3000/api/health returns status=ok and database=connected through the Vite proxy.
-- Container client/SSR build and TypeScript checks passed.
-- Rapier per-tick repeatability test passed over 20 fresh worlds in the Linux container and separately on Windows.
-- Windows and Linux Node fixture digests match: 2cfca09497b519757c35c68ca767ec6e59d5ba6d9c22fbce1eecac4c562148f7.
-- Laravel tests: 4 passed, 8 assertions. Health success/failure behaviour is covered with database mocks; the live health endpoint independently verifies PostgreSQL connectivity.
-- Laravel Pint applied to changed PHP files. Laravel Boost installed as a development dependency with generated guidelines.
-- Compose configuration and PowerShell parser validation passed.
+1. Open http://localhost:3000 and confirm the development page loads.
+2. Check http://localhost:3000/api/health. A healthy response contains status=ok and database=connected.
+3. Run dev.ps1 check to build the frontend, check TypeScript, run the 20-world physics repeatability test, execute the headless fixture and run the Laravel tests.
+4. Use the development page's physics button for a browser smoke check.
 
-Limitations: browser interaction and Chromium/Firefox/WebKit agreement have not been tested. The browser button is supplied for a local smoke check. The fixture is deliberately small and is not a certification for complex puzzles. Vite reports a large lazy-loaded Rapier compatibility chunk (about 803 kB gzip); loading and bundle optimisation belong to the playable-prototype milestone. No production deployment, user authentication, editor or public sharing has been implemented.
+The PHP health tests cover success and failure responses with database mocks. The live health endpoint checks the actual PostgreSQL connection. Dependency versions are recorded in the pnpm and Composer lockfiles; runtime versions are selected by the Dockerfiles.
 
-Use dev.ps1 down to stop the local services while preserving data. Project repository: https://github.com/smittie2000/machine-workshop.
+The fixture is deliberately small and does not certify complex puzzles or agreement across Chromium, Firefox and WebKit. Rapier is loaded separately from the initial page; loading and bundle optimisation belong to the playable-prototype milestone. Production deployment, user authentication, editing and public sharing are not implemented yet.
+
+Use dev.ps1 down to stop the local services while preserving data.

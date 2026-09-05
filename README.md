@@ -17,7 +17,7 @@ The scaffold includes a Docker environment, a TanStack development page with API
 - [Product and milestones](docs/01-product-design.md)
 - [Architecture and decisions](docs/02-architecture.md)
 - [Puzzle contract draft](docs/03-puzzle-contract.md)
-- [Development setup and verification status](docs/development.md)
+- [Development setup and checks](docs/development.md)
 
 ## Stack
 
@@ -25,11 +25,9 @@ Laravel API / Eloquent / PostgreSQL; TanStack Start, Router, Query and Store; Re
 
 ## Start
 
-Docker Desktop must be running in Linux-container mode. Run PowerShell in this directory:
+Clone this repository into any directory. Start Docker Desktop in Linux-container mode, then open PowerShell in the project directory:
 
 ```powershell
-git clone https://github.com/smittie2000/machine-workshop.git
-cd machine-workshop
 .\dev.ps1 setup
 .\dev.ps1 up
 ```
