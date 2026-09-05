@@ -1,44 +1,77 @@
-# Machine Workshop — product design
+# Machine Workshop — product decisions
 
-Project name: Machine Workshop. Design baseline: 2026-09-05.
+Status: accepted design for implementation. This document and the linked specifications replace earlier planning proposals. Features described here are not all implemented; see [handoff](06-implementation-handoff.md).
+
+## Guiding constraint
+
+**Only glue code and product rules.**
+
+Use Laravel/Eloquent, Spatie Laravel Data, TypeScript Transformer, Wayfinder, TanStack, browser APIs, PixiJS and Rapier for their existing capabilities. Write the game's definitions, permissions, state transitions and adapters. Do not build a physics engine, ORM, schema generator, routing system, generic entity/component framework, generic material editor or reusable command/event platform.
 
 ## Product
 
-A browser-based 2D contraption sandbox inspired by the experience of The Incredible Machine. Players build machines, share runnable creations, remix them, and publish puzzles. The creator uses the same editor to produce the initial playable puzzle collection. Original artwork, names, and content will give the game its own identity.
+An independent browser contraption game inspired by The Incredible Machine. The sandbox is the foundation. Players build, run, save and remix creations; authors use that same editor to make prepared puzzles. A later competition layer rewards efficient solutions. A shaded, dimensional appearance on a 2D plane is compatible with this design, but artwork production is not a prerequisite for the first slice.
 
-## Primary journeys
+## Accepted permissions
 
-1. Open a shared creation, press Play, Reset, and Remix into an editable copy.
-2. Build a machine by placing, rotating, configuring, and connecting parts. Undo/redo edits. Save a draft.
-3. Turn a creation into a puzzle by locking scenery, selecting the available inventory, and defining a goal. Supply a working solution before publishing a ranked puzzle.
-4. Solve a puzzle, inspect a provisional score, submit for verification, and improve the solution.
+| Activity | Guest | Signed-in player | Catalogue maintainer |
+| --- | --- | --- | --- |
+| Browse/play public creations and puzzles | Yes | Yes | Yes |
+| Experiment and save a browser-local draft | Yes | Yes | Yes |
+| Place, rotate, remove or duplicate permitted parts | Yes | Yes | Yes |
+| Change arbitrary scale, collider, mass, friction, bounce or gravity | No | No | Through reviewed release definitions only |
+| Choose brick/wood/rubber platform | Choose an approved part variant | Same | Defines variants |
+| Cloud saves, publishing and ranked submissions | No | Own records | Same application policies |
+| Edit a released catalogue | No | No | No; publish another release |
 
-Public browsing and local experimentation should not require login. Accounts are needed for server saves, publishing, and ranked submissions. This is a proposed product default, not implemented authentication.
+Position and rotation are the editable physical settings. Copying a part counts against puzzle inventory. Fixed scenery cannot be moved, removed, duplicated or reconfigured in solve mode. Creators can choose scenery and inventory in authoring mode; publishing freezes them. A basketball cannot be freely converted into a wooden ball: such an object would be another reviewed part.
 
-## Editor experience
+Maintainer contributions use GitHub pull requests with Laravel seed definitions and original artwork. There is no in-game catalogue administration surface in this scope.
 
-Desktop-first. Main canvas with part palette on the left, selected-part properties on the right, and Play/Pause/Reset plus tick status above. Keyboard shortcuts supplement visible controls. Touch-friendly play comes before a full mobile authoring experience.
+## Authoring, solving and sharing
 
-Editing state and simulation state are separate. Play creates a fresh simulation from a draft snapshot. Reset restores the draft. Ranked runs allow no placement changes or live intervention. Pause and visual playback speed do not change the physics timestep.
+- A creation has an editable draft. Cloud drafts are private to their owner.
+- Publishing creates an immutable public version. Later edits affect only the draft until published again.
+- A sandbox publication is a runnable creation with no required goal.
+- A puzzle publication includes fixed scenery, allowed inventory and one goal. Ranked publication requires a server-verified example solution.
+- Store the author's example solution privately; never include it in public puzzle responses.
+- Remix creates a separate draft and retains the source publication reference. It never edits the original.
+- Published URLs identify a specific version, not a mutable draft.
+- Existing published physics remains reproducible. Removal from discovery may be added later without deleting dependencies needed for replay.
 
-## Initial parts and goals
+## Editing and running
 
-First physics proof: ball, fixed ramp/platform, dynamic box, bucket target. Then add seesaw, switch, and motor. Ropes, belts, gears, characters, fluids, and arbitrary scripting are later investigations.
+Desktop-first. Use ordinary React controls around the PixiJS canvas: part palette, selected part properties, play controls. Do not recreate form controls inside the canvas.
 
-Initial goal: a designated object's centre stays within a designated goal region for 30 consecutive simulation ticks. This definition must be visible to authors; graphical bucket boundaries must agree with the actual region. Goal evaluation follows the physics step.
+Load -> validated draft -> edit -> Play -> fresh simulation -> Pause/Resume or Reset.
+Reset discards the running world and shows the unchanged draft. Playback never rewrites starting placements. Placement edits require returning to edit mode. All runs in this release, including sandbox runs, use this rule; live intervention is deferred.
 
-Initial score: ascending completion tick, then ascending added-part count. Equal scores share a rank; submission time is only a stable display ordering. Leaderboards are scoped to an immutable puzzle version and simulation version. Faster hardware never improves scores.
+Save persists the draft, never the current falling-ball positions. Edits made while a save request is pending must not be lost when its response arrives. A cloud revision conflict is shown to the player; keep the local draft and offer reload or save as a separate creation. Do not implement automatic merging.
 
-Charts show score distributions or personal improvements. An accessible table remains the authoritative standings view. Charts are a later milestone, not a prerequisite for proving physics.
+Undo/redo is added with the editor milestone: bounded document snapshots, one entry per completed edit/drag, excluding selection and simulation ticks. No generic command bus or event sourcing. A browser-local save uses native localStorage with explicit success/error feedback; no offline synchronization or offline-play guarantee.
 
-## Milestones and acceptance
+## Catalogue and physics ownership
 
-1. Environment: reproducible dependency installation, frontend build/typecheck, API health, PostgreSQL connection and migrations.
-2. Physics proof: browser and headless runner use the same package; repeat runs match at every step, reset is clean, different rendering rates agree.
-3. Editor: place/rotate/remove, selection, undo/redo, draft snapshot, save/load round-trip without changing part order or numbers.
-4. Sharing: Laravel persistence and ownership, immutable published versions, public URLs, remix provenance, three starter puzzles.
-5. Competition: bounded verification jobs, server-calculated scores, version-scoped rankings and score charts.
+One catalogue release contains its complete material and part records and references one simulation recipe/version. The release is editable only before release. Releasing seals it. Unchanged definitions can be copied into a new release; no independently versioned material framework is needed.
 
-## Deferred
+Materials use known relational fields. Parts use known relational geometry, mass and material references. Puzzle JSON references those parts. Values do not come from SVG outlines, image pixels, Blender meshes, user scripts or arbitrary submitted Rapier options.
 
-Realtime multiplayer, monetary rewards, arbitrary user code, user-created physics behaviours, advanced mechanics, AI-generated puzzles, and a large campaign. AI may assist development; simulation correctness is established by tests.
+The visual reference is separate from physics. The first slice uses PixiJS primitives. Future art must preserve contact alignment, origin and pivot. Art-only changes must not modify physics; physical changes require another catalogue release (and a simulation version change if numerical rules/code change).
+
+## Goals and scores — later implementation, settled semantics
+
+First supported puzzle goal: the centre of a designated object remains inside an axis-aligned rectangular region for 30 consecutive completed physics steps. Boundary inclusion is inclusive. Evaluate after each step; leaving resets the counter. The success tick is the tick completing that count, including dwell time. The region is a mathematical goal test, not a mass-contributing physics sensor.
+
+Rank by completion tick ascending, then player-added part count ascending. Equal scores share rank; accepted timestamp then submission ID only stabilize display order. Rank per immutable publication. Client results are provisional. A slower computer gets no score disadvantage because wall time is never the score.
+
+Use a table for standings; charts may show distributions and personal improvement. Charts, account UI, publishing and ranking are later milestones, not dependencies of the material prototype.
+
+## First playable slice
+
+Three identical basketballs dropped from equal heights onto identically sized brick, wood and rubber-mat platforms. Only approved material presets differ. Players may rearrange positions/rotations, Play, Reset, save locally and reopen. Show first rebound height as a diagnostic, not a ranked score. No coefficient sliders in the public editor.
+
+Implement it after the Laravel catalogue and generated contracts work. See [implementation sequence](05-implementation-plan.md). The initial fixture coefficients are gameplay tuning values, not real-world material measurements.
+
+## Deferred without blocking this design
+
+Connections/joints, arbitrary resizing, ropes, gears, fans, characters, fluids, skins, custom behaviours, live multiplayer, user scripts, mobile authoring, monetization and AI-generated puzzles. Add supported part/connection types when a concrete mechanic needs them; do not build extension infrastructure in anticipation.

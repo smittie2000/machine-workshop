@@ -1,88 +1,112 @@
-# Architecture and decisions
+# Framework ownership and lifecycle
 
-Status: agreed direction; implementation status is tracked separately in development.md.
+Status: accepted. Governing constraint: **Only glue code and product rules.**
 
-## Stack ownership
+## Framework mapping
 
-| Component | Owns |
-| --- | --- |
-| Laravel API / Eloquent | Authentication, authorization, validation, business rules, persistence, publication, verification orchestration, rankings |
-| PostgreSQL | Durable application data; accessed through Laravel |
-| TanStack Start / React / Router | SSR website, navigation, editor UI and server-side API reads |
-| TanStack Query | API data fetching, caching and mutations |
-| TanStack Store | Client draft, selection, active tool, editing history and coarse run status |
-| PixiJS | Canvas rendering, camera and canvas input |
-| Rapier 2D | Physics bodies, collisions and constraints |
-| Shared TypeScript simulation | Ordered construction, ticks, part behaviours, goals and score calculation |
-| Node verifier | Bounded headless execution of that shared simulation |
+| Responsibility | Existing capability to use | Glue/product code permitted |
+| --- | --- | --- |
+| Tables, relations, transactions | Laravel migrations, Eloquent, PostgreSQL constraints | Domain columns and constraints; release/save transactions |
+| Authorization | Laravel policies and middleware | Ownership and publication permissions |
+| Authentication, later | Laravel Fortify + Sanctum session authentication | UI, same-origin forwarding and standard CSRF handling |
+| PHP data shape / JSONB casting | Spatie Laravel Data | Named DTOs, validation attributes and cross-field product rules |
+| TypeScript data contracts | Spatie TypeScript Transformer | Generator configuration; no handwritten duplicate interfaces |
+| Laravel API route helpers | Laravel Wayfinder | Generator configuration and a small fetch adapter |
+| Page navigation / SSR | TanStack Start + Router | Routes and page composition |
+| Fetch/cache/mutations | TanStack Query | Query keys, query options and save mutation behaviour |
+| Editing subscriptions | TanStack Store | Per-editor state and feature-specific edit actions |
+| Local draft persistence | Native localStorage / JSON / structuredClone | Save/load envelope, errors and bounded history |
+| Canvas and input | PixiJS | Part visual factory, pointer-to-world conversion |
+| Collision, gravity, integration | Rapier 2D | Explicit supported shape/material construction |
+| Tick/goal semantics | Shared TypeScript module | Fixed-step orchestration, deterministic order, success test |
+| Background verification, later | Laravel queue/jobs + Symfony Process | Bounded invocation of shared Node simulation and result validation |
+| Rankings, later | Eloquent/PostgreSQL queries; TanStack Table/Charts as needed | Score ordering and display |
 
-Do not add Django or direct PostgreSQL access to Start. Start server functions may adapt requests but must not duplicate Laravel business rules. React and Store do not receive every physics-body update.
+Do not add Inertia: Start/Router already own frontend navigation. Wayfinder describes Laravel API routes; it does not replace TanStack Router. Do not add Django, a second auth owner, a TypeScript database connection, a generic repository layer over Eloquent, a custom schema compiler or a custom game engine.
 
-## Repository layout
-
-```text
-apps/web/           TanStack Start application
-apps/api/           Laravel API
-apps/verifier/      headless verification entrypoint
-packages/simulation/ browser-independent TypeScript and Rapier
-packages/contracts/ versioned puzzle schemas and TypeScript types
-docs/               product, architecture, contracts, development
-infra/              local infrastructure configuration
-```
-
-One repository, pnpm workspace for JavaScript packages, Composer lockfile for Laravel. Pin exact simulation dependencies and retain lockfiles. Do not upgrade physics as routine maintenance without compatibility validation.
+The tools do not remove product work. Transform constraints, release immutability, fixed scenery, inventory and replay validation are genuine product rules.
 
 ```mermaid
 flowchart LR
-  Player[Browser] --> Start[TanStack Start / React]
-  Start --> Query[Query: API records]
-  Start --> Draft[Store: editable draft]
-  Draft -->|Play: immutable snapshot| Sim[Shared TypeScript + Rapier]
-  Sim --> Pixi[PixiJS canvas]
-  Query --> API[Laravel API / Eloquent]
-  API --> PG[(PostgreSQL)]
-  API -->|validated submission| Verify[Node verifier]
-  Verify --> Sim
-  Verify -->|calculated result| API
+  DB[(PostgreSQL)] <--> Models[Eloquent models]
+  Models --> DTO[Laravel Data DTOs]
+  DTO --> API[Laravel API]
+  DTO --> Types[Generated TypeScript contracts]
+  API --> Query[TanStack Query]
+  Query --> Draft[TanStack Store draft]
+  Draft -->|Play snapshot| Physics[Rapier via shared adapter]
+  Physics --> View[PixiJS]
+  Draft -->|Save| API
+  Types -.-> Query
+  Types -.-> Draft
+  Types -.-> Physics
 ```
 
-The diagram describes the target architecture. Current scaffold boundaries exist, but draft editing, authentication and submission verification are not yet implemented.
+The Save arrow is the later authenticated cloud path. The first slice saves a local draft through native browser storage. Laravel never receives per-frame updates.
 
-## Request and authentication design
+## Repository boundaries
 
-Prefer one browser-facing origin. Reverse proxy /api/* and /sanctum/* to Laravel; other paths to Start. Laravel owns session cookies and CSRF enforcement. SSR calls use an internal API origin and explicitly forward only required authentication headers. Never put privileged tokens in browser bundles. Query clients must be per SSR request, not a global cache shared across users.
+- apps/api: authoritative Eloquent models, DTOs, enums, policies, controllers, seeders and application actions.
+- packages/contracts: generated TypeScript DTO/enumeration definitions. No competing manually maintained puzzle schema.
+- apps/web/src/generated: Wayfinder output only; contains transport helpers, not game data.
+- apps/web: React/Start pages, Query configuration, Store draft, localStorage adapter, PixiJS presentation.
+- packages/simulation: Rapier adapter and product simulation rules. Receives a resolved catalogue and validated document as inputs. Imports contract types, not HTTP/React/DOM.
+- apps/verifier: Node entrypoint for the same package. Existing smoke runner is not yet a submission verifier.
+- docs: normative design and implementation handoff.
 
-Authentication and the reverse proxy are milestones to implement and test. Public health checks can be built first. Browser API access uses relative paths; server API access uses an environment variable. Avoid adding two independent login/session systems.
+Spatie Laravel Data, TypeScript Transformer, Wayfinder, Fortify and Sanctum are selected but not installed in the current scaffold. Implementation must confirm mutually compatible releases with the existing Laravel/PHP versions and pin them. Do not upgrade the entire stack to add them.
 
-## Data model
+## Contract generation across containers
 
-- users: Laravel account ownership.
-- creations: editable owner-controlled record, title, draft JSON, revision for optimistic concurrency, optional remix origin.
-- puzzle_versions: immutable published document, inventory, locked parts, goal, schema version, simulation version, content hash.
-- submissions: authenticated user, puzzle version, bounded starting arrangement, status and idempotency key.
-- verification_results: calculated completion tick, part count, simulation version and diagnostic digest; failures never earn a score.
+PHP contracts are the source. Generate from the API container into the shared workspace before web typecheck/build. Use Wayfinder's Artisan generator with an explicit output directory; do not ask the Node-only Vite container to run PHP and do not mount the Docker socket into it.
 
-Store draft documents in JSONB; retain relational keys and indexes for ownership and listing. A published version is never overwritten by later edits. Saving with a stale revision returns a conflict instead of silently replacing another edit.
+Add one root development command that runs the packages' generators in order. Use their existing CLIs/watch support, not a custom file watcher. Clear stale Laravel route cache before generation. Initially explicit regeneration after PHP contract changes is sufficient.
 
-## Verification trust boundary
+Commit generated contract and Wayfinder outputs so frontend contributors can inspect them. Never hand-edit them. CI regenerates from a fresh checkout and fails on a diff, then builds/types checks. Generated paths must not contain workstation-dependent paths, origins or secrets. Preserve internal package files the generators require.
 
-Browser scores are provisional. Laravel validates document shape, ownership, immutable locked objects, inventory and placement rules before queueing. The verifier loads a server-owned puzzle version plus the submitted placement; it does not trust submitted scenery, goals, score, executable code or simulation version.
+Wayfinder returns URL/method helpers; Spatie supplies payload/response types. Fetch makes the request; Query manages its lifecycle. A typed fetch return is not runtime validation.
 
-Jobs have maximum payload, parts, joints, ticks, wall time and memory. Start with one isolated process per job and modest concurrency. Retry idempotently; only Laravel records accepted rankings. Communication transport is an implementation decision: Laravel may invoke a bounded worker process initially, with a queue-backed worker later.
+## Validation ownership
 
-## Determinism contract
+Laravel Data supplies structural types and ordinary validation through Laravel's validator. Add domain rules for catalogue membership, supported shape fields, limits, immutable scenery and inventory. Use explicit validation for requests, local-draft restoration and seed imports: constructing a DTO or casting an Eloquent attribute is not itself proof that validation ran.
 
-Use a fresh world per run, fixed 1/60 second timestep, stable IDs and sorted construction/event processing order. No wall-clock timing, unseeded randomness or render-frame-derived input in game rules. Avoid platform-sensitive transcendental calculations when producing physics inputs. Quantize authoring inputs to documented units before saving. Camera and CSS pixels never change world geometry.
+Use enum/attribute/rule capabilities before custom validators. Reject unsupported/unknown payload keys with explicit allowed-key rules. Do not build a second generic validation schema in TypeScript. UI constraints improve feedback; Laravel remains authoritative.
 
-Record schemaVersion and simulationVersion. The latter identifies Rapier version, simulation code and configuration. Same inputs on the same supported simulation version must agree across intended browsers and verifier. Upgrades require a new version and an explicit old-version support strategy.
+For the first slice, restoring a local document calls a stateless guest validation endpoint before it can run. This avoids a duplicated runtime validator. It requires the API to be reachable; local save does not promise offline operation. The simulation still checks supported recipe/shape IDs and refuses invalid numerical inputs as a small boundary guard.
 
-Validation: per-tick state digests over repeated runs, fresh resets, varying render schedules, Chromium/Firefox/WebKit and Node. Same-host tests are an initial gate, not proof of cross-platform determinism. Maintain golden fixtures and investigate changed results before accepting new versions.
+## Load, edit, run, save
 
-## Sources consulted
+| Step | Owner and behaviour |
+| --- | --- |
+| Load catalogue | Query retrieves a released catalogue DTO; cache by exact release key, never substitute latest |
+| Load creation | Query retrieves a DTO; validate before copying its document into a Store created for this editor |
+| Edit | Store holds draft, dirty state, selection and history; mutate through small feature actions |
+| Play | Freeze/clone current validated draft; construct a new Rapier world from document + exact catalogue |
+| Render | PixiJS reads transforms; React/Store receive coarse status, not every body transform |
+| Pause | Stop stepping; no wall-time accumulation while paused |
+| Reset | Free world, return to existing draft; do not reconstruct the draft from physics output |
+| Local save | Write a versioned JSON envelope; catch quota/storage errors; never claim success on failure |
+| Cloud save, later | Send expectedRevision + DTO through Wayfinder/fetch/Query; Laravel authorizes, validates and atomically increments revision |
+| Save response | Query caches accepted server result; clear dirty only if current draft is still the submitted draft |
+| Publish, later | Laravel validates and freezes a new publication; verified solution required for ranked puzzle |
+| Submit, later | Laravel loads authoritative publication/catalogue, validates player placements and queues independent replay |
 
-- https://tanstack.com/start/latest/docs/framework/react/build-from-scratch
-- https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr
-- https://rapier.rs/docs/user_guides/javascript/determinism/
-- https://laravel.com/docs/13.x/installation
+Clear body handles at reset; selection uses document instance IDs, not Rapier handles. A catalogue update notification may offer an explicit new draft; it must not mutate an open machine.
 
-Package versions and actual compatibility must be checked during installation; these documents describe the intended design, not completed features.
+## HTTP and SSR
+
+Keep one browser-facing origin. Browser API requests use relative paths. Current Vite proxy serves /api and /sanctum; when authentication arrives also proxy the selected Fortify endpoints. Server-side reads use an internal API origin and forward only necessary cookies/headers. Do not expose internal origin in browser config. State-changing SSR proxy work must preserve CSRF protection.
+
+Public gallery/details can SSR. PixiJS and Rapier initialize client-side after mounting; no canvas access during SSR. Use a fresh QueryClient per SSR request. Private data is not globally cached; clear user-specific cached data on logout. Start server functions may adapt transport but never duplicate Laravel business rules.
+
+## Verification, later
+
+Use Laravel's existing database queue initially. A queue worker image with the required PHP and Node runtimes invokes the Node verifier through Symfony Process using an argument array and JSON stdin. No shell-built commands, user-provided executable paths or HTTP microservice framework.
+
+Worker receives a bounded server-resolved catalogue/publication plus permitted player placements. It produces a bounded result containing completion tick, part count and status. Laravel validates the result and records it transactionally/idempotently. Reject mismatched recipes; fail closed on timeout/error. Private solution data never appears in public resources.
+
+Keep the existing simulation implementation for the prototype recipe. Before accepting another recipe, retain an explicit mapping to its supported implementation and build. Old puzzles are never silently simulated under newer code.
+
+## What we deliberately do not build
+
+No custom physics, automatic hitbox extraction, material scripting language, generic ECS, universal part-property editor, binary save format, event-sourced undo system, local sync database, generalized JSON schema generator or duplicated PHP/TypeScript domain declarations. Standard migrations/models/DTOs and a few explicit adapters are the intended implementation.

@@ -16,12 +16,17 @@ The scaffold includes a Docker environment, a TanStack development page with API
 
 - [Product and milestones](docs/01-product-design.md)
 - [Architecture and decisions](docs/02-architecture.md)
-- [Puzzle contract draft](docs/03-puzzle-contract.md)
+- [Domain schema and data contract](docs/03-puzzle-contract.md)
+- [Material prototype specification](docs/04-material-prototype.md)
+- [Implementation sequence](docs/05-implementation-plan.md)
+- [Start a new implementation conversation](docs/06-implementation-handoff.md)
 - [Development setup and checks](docs/development.md)
 
 ## Stack
 
 Laravel API / Eloquent / PostgreSQL; TanStack Start, Router, Query and Store; React / TypeScript / CSS; PixiJS and Rapier 2D. Charts are deferred to the leaderboard milestone. The current page is an environment smoke check, not the game editor.
+
+The accepted design adds Spatie Laravel Data, TypeScript Transformer and Laravel Wayfinder for Laravel-owned data contracts and generated frontend types/routes. These additions are planned, not installed yet. The guiding constraint is **only glue code and product rules**: use existing framework capabilities instead of building replacement systems.
 
 ## Start
 
