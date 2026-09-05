@@ -1,0 +1,18 @@
+{
+  "name": "@workshop/simulation",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dimforge/rapier2d-compat": "0.20.0"
+  },
+  "devDependencies": {
+    "tsx": "4.23.13",
+    "typescript": "7.0.2",
+    "@types/node": "26.4.1"
+  }
+}

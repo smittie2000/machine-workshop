@@ -1,0 +1,6 @@
+packages:
+  - apps/web
+  - apps/verifier
+  - packages/*
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,14 @@
+{
+  "name": "@workshop/verifier",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "tsx src/smoke.ts"
+  },
+  "dependencies": {
+    "@workshop/simulation": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.23.13"
+  }
+}

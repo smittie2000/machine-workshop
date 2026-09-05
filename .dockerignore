@@ -1,0 +1,8 @@
+**/node_modules
+.pnpm-store
+.local
+**/vendor
+.git
+**/.env
+**/dist
+**/.output
